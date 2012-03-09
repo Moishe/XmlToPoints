@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <style type="text/css">
+    html { height: 100% }
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      font-size: 10pt;
+      color:green;
+      border-bottom: solid 1px #CCC;
+    }
+    div {
+
+    }
+    .infobox {
+      font-family: Helvetica,Arial,\"Bitstream Vera Sans\",sans-serif;
+      font-size: 10pt;
+      width: 512px;
+    }
+
+    .trail-desc {
+      width: 400px;
+      float: left;
+      margin-right: 10px;
+    }
+
+    .trail-stats {
+      width: 100px;
+      float: left;
+    }
+
+    a:link {
+      text-decoration: none;
+    }
+
+    a:visited {
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #00CC99;
+    }
+
+    #map_canvas { height: 100% }
+    table {
+      width: 100%;
+      height: 100%;
+    }
+
+    td {
+      height: 100%;
+    }
+
+  </style>
+  <script type="text/javascript"
+    src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCY7q5a-tgPPvLAYPaaxdOeomitd8N7fJk&sensor=true">
+  </script>
+  </head>
+  <body onload="initialize()">
+    <script type="text/javascript">
+      function gotPoints(points, color) {
+        var mapPoints = [];
+        var bounds = new google.maps.LatLngBounds();
+        for (var j = 0; j < points.length; j++) {
+          var p;
+          if (points[j].length == 2) {
+            p = new google.maps.LatLng(points[j][0],
+                                       points[j][1]);
+          } else {
+            p = new google.maps.LatLng(points[j].lat,
+                                       points[j].lon);
+          }          
+          mapPoints.push(p);
+          bounds.extend(p);
+        }
+
+        var poly = new google.maps.Polyline({
+          path: mapPoints,
+          strokeColor: color,
+          strokeOpacity: 0.7,
+          strokeWeight: 4
+        });
+
+        poly.setMap(map);
+        map.fitBounds(bounds);
+      }
+
+      function initialize() {
+        var latlng = new google.maps.LatLng(40.0, -105.26);
+        var myOptions = {
+          zoom: 11,
+          center: latlng,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+{% for uri in uris %}
+        $.ajax({url: '/getpoints?uri={{ uri }}&cache={{ cache }}',
+                dataType: 'jsonp',
+                jsonp: 'jsonp',
+                success: function(points) {
+                  gotPoints(points, '{% cycle '#FF0000' '#00FF00' '#0000FF' '#FFFF00' '#00FFFF' %}');
+                }});
+{% endfor %}
+      }
+    </script>
+    <div id="map_canvas" style="width:100%; height:100%"></div>
+  </body>
+</html>

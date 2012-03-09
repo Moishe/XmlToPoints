@@ -1,0 +1,12 @@
+{
+  "name": "Inline GPX viewer",
+  "version": "1.0",
+  "description": "Pop-up displays of GPX files in Chrome",
+
+  "content_scripts": [
+    {
+      "matches": ["http://*/*"],
+      "js": ["jquery.js", "add_gpx_view_link.js"]
+    }
+  ]          
+}

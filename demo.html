@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <style type="text/css">
+    html { height: 100% }
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      font-size: 10pt;
+      color:green;
+      border-bottom: solid 1px #CCC;
+    }
+    div {
+
+    }
+    .infobox {
+      font-family: Helvetica,Arial,\"Bitstream Vera Sans\",sans-serif;
+      font-size: 10pt;
+      width: 512px;
+    }
+
+    .trail-desc {
+      width: 400px;
+      float: left;
+      margin-right: 10px;
+    }
+
+    .trail-stats {
+      width: 100px;
+      float: left;
+    }
+
+    a:link {
+      text-decoration: none;
+    }
+
+    a:visited {
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #00CC99;
+    }
+
+    #map_canvas { height: 100% }
+    table {
+      width: 100%;
+      height: 100%;
+    }
+
+    td {
+      height: 100%;
+    }
+
+  </style>
+  <script type="text/javascript"
+    src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCY7q5a-tgPPvLAYPaaxdOeomitd8N7fJk&sensor=true">
+  </script>
+  </head>
+  <body onload="initialize()">
+    <script type="text/javascript">
+      function gotPoints(points) {
+        var mapPoints = [];
+        var bounds = new google.maps.LatLngBounds();
+        for (var j = 0; j < points.length; j++) {
+          var p = new google.maps.LatLng(points[j].lat, points[j].lon);
+          mapPoints.push(p);
+          bounds.extend(p);
+        }
+
+        color = '#FFA500';
+
+        var poly = new google.maps.Polyline({
+          path: mapPoints,
+          strokeColor: color,
+          strokeOpacity: 0.7,
+          strokeWeight: 4
+        });
+
+        poly.setMap(map);
+        map.fitBounds(bounds);
+      }
+
+      function initialize() {
+        var latlng = new google.maps.LatLng(40.0, -105.26);
+        var myOptions = {
+          zoom: 11,
+          center: latlng,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+        $('#uri').submit(function() {
+          $.ajax({url: '/getpoints?uri=' + $('#uri-text').val(),
+                  dataType: 'jsonp',
+                  jsonp: 'jsonp',
+                  success: gotPoints});
+          return false;
+        });
+      }
+    </script>
+    <div id="input" style="float: left; width:400px; height: 400px;">
+      <form id="uri"><input id="uri-text" type="text"/></form>
+    </div>
+    <div id="map_canvas" style="width:400px; height:400px"></div>
+  </body>
+</html>
