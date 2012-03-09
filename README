@@ -1,0 +1,3 @@
+This is a very simple app that solves an annoying problem: KML and GPX layers on the Google Maps API don't have much granularity or flexibility.
+
+This app takes the URL of a KML or GPX file and returns a JSON array of points. Optionally, this array can be wrapped in a JSONP callback.
