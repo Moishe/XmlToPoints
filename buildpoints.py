@@ -4,6 +4,7 @@ import urlparse
 
 class BuildPoints():
   PARSERS = {'kml': parsers.KmlParser(),
+             'kmz': parsers.KmzParser(),
              'gpx': parsers.GpxParser()}
 
   def __init__(self, uri):

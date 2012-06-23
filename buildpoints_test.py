@@ -16,7 +16,7 @@ class TestBuildPoints(unittest.TestCase):
     self.testbed.init_memcache_stub()
 
   def test_build_points(self):
-    points = buildpoints.BuildPoints('foo.gxp', False).points()
+    points = buildpoints.BuildPoints('foo.gxp').points()
 
 if __name__ == '__main__':
   unittest.main()

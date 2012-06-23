@@ -1,7 +1,9 @@
 import logging
+import StringIO
 import threading
 import urllib
 import urlparse
+import zipfile
 
 from google.appengine.api import urlfetch
 
@@ -15,14 +17,20 @@ class Parser():
     result = urlfetch.fetch(uri)
 
     if result.status_code == 200:
-      contentHandler = self._getContentHandler()
-      sax.parseString(result.content, contentHandler)
-      points = contentHandler.points
+      content = self._preProcess(result.content)
+      contentHandlers = self._getContentHandlers()
+      while not points and len(contentHandlers) > 0:
+        contentHandler = contentHandlers.pop()
+        sax.parseString(content, contentHandler)
+        points = contentHandler.points
     else:
       # TODO(moishel): raise parse exception
       pass
 
     return points
+
+  def _preProcess(self, content):
+    return content
 
 
 class GpxContentHandler(sax.handler.ContentHandler):
@@ -36,11 +44,11 @@ class GpxContentHandler(sax.handler.ContentHandler):
 
 
 class GpxParser(Parser):
-  def _getContentHandler(self):
-    return GpxContentHandler()
+  def _getContentHandlers(self):
+    return [GpxContentHandler()]
 
 
-class KmlContentHandler(sax.handler.ContentHandler):
+class KmlLineStringContentHandler(sax.handler.ContentHandler):
   def __init__(self):
     self.in_linestring = False
     self.in_coordinates = False
@@ -60,12 +68,48 @@ class KmlContentHandler(sax.handler.ContentHandler):
 
   def characters(self, content):
     if self.in_coordinates and self.in_linestring:
-      coord_array = content.split(',')
+      coord_list = content.split(' ')
+      for coord in coord_list:
+        logging.error(coord)
+        coord_array = coord.split(',')
+        if len(coord_array) >= 2:
+          self.points.append([coord_array[1].strip(),
+                              coord_array[0].strip()])
+
+
+class KmlTrackContentHandler(sax.handler.ContentHandler):
+  def __init__(self):
+    self.in_track = False
+    self.in_coord = False
+    self.points = []
+    
+  def startElement(self, name, attrs):
+    if name == 'gx:Track':
+      self.in_track = True
+    elif self.in_track and name == 'gx:coord':
+      self.in_coord = True
+
+  def endElement(self, name):
+    if name == 'gx:Track':
+      self.in_track = False
+    elif name == 'gx:coord':
+      self.in_coord = False
+
+  def characters(self, content):
+    if self.in_coord:
+      coord_array = content.split(' ')
       if len(coord_array) >= 2:
         self.points.append([coord_array[1].strip(),
                             coord_array[0].strip()])
-
+    
+  
 
 class KmlParser(Parser):
-  def _getContentHandler(self):
-    return KmlContentHandler()
+  def _getContentHandlers(self):
+    return [KmlLineStringContentHandler(), KmlTrackContentHandler()]
+
+class KmzParser(KmlParser):
+  def _preProcess(self, content):
+    zf = zipfile.ZipFile(StringIO.StringIO(content))
+    new_content = zf.read(zf.filelist[0].filename)
+    return new_content

@@ -44,16 +44,10 @@ class TestParser(unittest.TestCase):
     points = parsers.KmlParser().parse('http://example.com/foo')
     self.checkValidPoints(points)
 
-  def test_gpx_parser_with_memcache(self):
-    uri = 'http://example.com/foo'
-    MockResult.mock_result = MockResultFromFile('mock.gpx')
-    points = parsers.GpxParser().parse(uri)
-
-    MockResult.mock_result = StaticMockResult(404, '')
-    cached_points = parsers.GpxParser().parse(uri)
-
-    self.assertEqual(points, cached_points)
-
+  def test_kmz_parser(self):
+    MockResult.mock_result = MockResultFromFile('mock.kmz')
+    points = parsers.KmzParser().parse('http://example.com/foo')
+    self.checkValidPoints(points)
 
 if __name__ == '__main__':
   print "really?"
