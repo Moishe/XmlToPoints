@@ -48,20 +48,20 @@ class GpxParser(Parser):
     return [GpxContentHandler()]
 
 
-class KmlLineStringContentHandler(sax.handler.ContentHandler):
+class CoordinateBlockContentHandler(sax.handler.ContentHandler):
   def __init__(self):
     self.in_linestring = False
     self.in_coordinates = False
     self.points = []
 
   def startElement(self, name, attrs):
-    if name == 'LineString':
+    if name == self.bounding_el:
       self.in_linestring = True
     elif self.in_linestring and name == 'coordinates':
       self.in_coordinates = True
 
   def endElement(self, name):
-    if name == 'LineString':
+    if name == self.bounding_el:
       self.in_linestring = False
     elif name == 'coordinates':
       self.in_coordinates = False
@@ -70,12 +70,22 @@ class KmlLineStringContentHandler(sax.handler.ContentHandler):
     if self.in_coordinates and self.in_linestring:
       coord_list = content.split(' ')
       for coord in coord_list:
-        logging.error(coord)
         coord_array = coord.split(',')
         if len(coord_array) >= 2:
           self.points.append([coord_array[1].strip(),
                               coord_array[0].strip()])
 
+
+class KmlLineStringContentHandler(CoordinateBlockContentHandler):
+  def __init__(self):
+    CoordinateBlockContentHandler.__init__(self)
+    self.bounding_el = 'LineString'
+
+class KmlLinearRingContentHandler(CoordinateBlockContentHandler):
+  def __init__(self):
+    CoordinateBlockContentHandler.__init__(self)
+    self.bounding_el = 'LinearRing'    
+  
 
 class KmlTrackContentHandler(sax.handler.ContentHandler):
   def __init__(self):
@@ -101,12 +111,11 @@ class KmlTrackContentHandler(sax.handler.ContentHandler):
       if len(coord_array) >= 2:
         self.points.append([coord_array[1].strip(),
                             coord_array[0].strip()])
-    
-  
+
 
 class KmlParser(Parser):
   def _getContentHandlers(self):
-    return [KmlLineStringContentHandler(), KmlTrackContentHandler()]
+    return [KmlLineStringContentHandler(), KmlTrackContentHandler(), KmlLinearRingContentHandler()]
 
 class KmzParser(KmlParser):
   def _preProcess(self, content):
