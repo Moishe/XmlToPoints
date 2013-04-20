@@ -38,7 +38,7 @@ class GpxContentHandler(sax.handler.ContentHandler):
     self.points = []
 
   def startElement(self, name, attrs):
-    if name == 'trkpt':
+    if name == 'trkpt' or name == 'waypt' or name == 'rtept':
       self.points.append([attrs.getValue('lat'),
                           attrs.getValue('lon')])
 
@@ -52,6 +52,7 @@ class CoordinateBlockContentHandler(sax.handler.ContentHandler):
   def __init__(self):
     self.in_linestring = False
     self.in_coordinates = False
+    self.content = ""
     self.points = []
 
   def startElement(self, name, attrs):
@@ -64,17 +65,25 @@ class CoordinateBlockContentHandler(sax.handler.ContentHandler):
     if name == self.bounding_el:
       self.in_linestring = False
     elif name == 'coordinates':
+      if self.in_coordinates and self.in_linestring:
+        self.process_coordinates()
       self.in_coordinates = False
+      self.content = ""
 
   def characters(self, content):
     if self.in_coordinates and self.in_linestring:
-      coord_list = content.split(' ')
-      for coord in coord_list:
-        coord_array = coord.split(',')
-        if len(coord_array) >= 2:
-          self.points.append([coord_array[1].strip(),
-                              coord_array[0].strip()])
+      self.content += content
 
+  def process_coordinates(self):
+    content = self.content
+    coord_list = content.split(' ')
+    for coord in coord_list:
+      coord_array = coord.split(',')
+      if len(coord_array) >= 2:
+        lat = coord_array[1].strip()
+        lng = coord_array[0].strip()
+        if lat and lng:
+          self.points.append([lat, lng])
 
 class KmlLineStringContentHandler(CoordinateBlockContentHandler):
   def __init__(self):
@@ -109,9 +118,12 @@ class KmlTrackContentHandler(sax.handler.ContentHandler):
     if self.in_coord:
       coord_array = content.split(' ')
       if len(coord_array) >= 2:
-        self.points.append([coord_array[1].strip(),
-                            coord_array[0].strip()])
-
+        lat = coord_array[1].strip()
+        lng = coord_array[0].strip()
+        if lat and lng:
+          self.points.append([lat, lng])
+    
+  
 
 class KmlParser(Parser):
   def _getContentHandlers(self):
